@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Custom Deploy Action 🚀
-        uses: .github/actions/deploy-versioned-pages
+        uses: ./.github/actions/deploy-versioned-pages
         with:
           source_folder: "docs/build"  # Change to an actual test folder
           versions_file: "versions"
