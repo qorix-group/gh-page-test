@@ -53,6 +53,7 @@ runs:
       run: |
         # Prepare the deploy folder
         mkdir -p deploy_root
+        mkdir -p version_root
         # Move the files to the deploy folder
         mv ${{ inputs.source_folder }}/* deploy_root/
         # Ensure that the folder is not treated as a Jekyll site
@@ -64,10 +65,11 @@ runs:
         if ! grep -qx "${{ steps.calc.outputs.target_folder }}" "${{ inputs.versions_file }}"; then
           echo "${{ steps.calc.outputs.target_folder }}" >> "${{ inputs.versions_file }}"
         fi
-        mv "${{ inputs.versions_file }}" deploy_root/
+        mv "${{ inputs.versions_file }}" version_root/
         ls -al .
         ls -al deploy_root
-    - name: Deploy 🚀
+        ls -al version_root
+    - name: Deploy  documentation🚀
       uses: JamesIves/github-pages-deploy-action@v4
       with:
         folder: deploy_root
@@ -75,6 +77,11 @@ runs:
         target-folder: ${{ steps.calc.outputs.target_folder }}
         clean-exclude: |
           .nojekyll
+    - name: Deploy  version🚀
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        folder: version_root
+        clean: false       
 
     - name: Comment on PR with docs URL
       if: ${{ github.event_name == 'pull_request' && inputs.create_comment == 'true' }}
