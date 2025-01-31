@@ -69,14 +69,27 @@ runs:
         ls -al .
         ls -al deploy_root
         ls -al version_root
-    - name: Deploy  documentation🚀
+        
+    # Deploy documentation when target-folder is NOT root
+    - name: Deploy Documentation (Non-Root) 🚀
+      if: ${{ steps.calc.outputs.target_folder != '/' }}
       uses: JamesIves/github-pages-deploy-action@v4
       with:
         folder: deploy_root
-        clean: true  # Ensures only updated files remain in the folder
+        clean: true  # Clean enabled for non-root folders
         target-folder: ${{ steps.calc.outputs.target_folder }}
         clean-exclude: |
           .nojekyll
+
+    # Deploy documentation when target-folder IS root
+    - name: Deploy Documentation (Root) 🚀
+      if: ${{ steps.calc.outputs.target_folder == '/' }}
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        folder: deploy_root
+        clean: false  # Clean disabled for root folder
+        target-folder: /
+
     - name: Deploy  version🚀
       uses: JamesIves/github-pages-deploy-action@v4
       with:
