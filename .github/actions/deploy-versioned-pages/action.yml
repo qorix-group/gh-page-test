@@ -74,7 +74,6 @@ runs:
         clean: true  # Ensures only updated files remain in the folder
         target-folder: ${{ steps.calc.outputs.target_folder }}
         clean-exclude: |
-          versions
           .nojekyll
 
     - name: Comment on PR with docs URL
