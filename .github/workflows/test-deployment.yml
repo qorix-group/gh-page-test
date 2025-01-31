@@ -1,0 +1,26 @@
+name: Test Deploy Versioned Pages
+
+on:
+  pull_request:
+    types: [opened, synchronize, closed]
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+        
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run Custom Deploy Action 🚀
+        uses: ./.github/actions/deploy-versioned-pages
+        with:
+          source_folder: "docs/build"  # Change to an actual test folder
+          versions_file: "versions"
+          create_comment: "true"
