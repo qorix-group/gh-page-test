@@ -14,9 +14,23 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: gh-pages-deploy
+    permissions:
+        contents: write  # ✅ Required for pushing to gh-pages
+        pages: write
+        id-token: write    
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+    - name: Debug: Check If Token is Passed
+    run: |
+          if [ -z "${{ secrets.GH_PAGES_DEPLOY_TOKEN }}" ]; then
+            echo "❌ ERROR: GH_PAGES_DEPLOY_TOKEN is empty!"
+            exit 1
+          else
+            echo "✅ GH_PAGES_DEPLOY_TOKEN is available."
+          fi        
 
       - name: Run Custom Deploy Action 🚀
         uses: ./.github/actions/deploy-versioned-pages
@@ -24,5 +38,5 @@ jobs:
           source_folder: "docs/build"  # Change to an actual test folder
           versions_file: "versions"
           create_comment: "true"
-          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          gh_token: ${{ secrets.GH_PAGES_DEPLOY_TOKEN }}
 
