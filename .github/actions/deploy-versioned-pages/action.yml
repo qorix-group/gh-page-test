@@ -28,6 +28,10 @@ inputs:
   create_comment:
     description: "Create a comment on the PR with the URL to the documentation" # in case of PR
     default: "true"
+  gh_token:
+    description: "GitHub token for authentication"
+    required: true  # ✅ Required input
+
 
 outputs:
   target_folder:
@@ -69,12 +73,13 @@ runs:
         ls -al .
         ls -al deploy_root
         ls -al version_root
-        
+
     # Deploy documentation when target-folder is NOT root
     - name: Deploy Documentation (Non-Root) 🚀
       if: ${{ steps.calc.outputs.target_folder != '/' }}
       uses: JamesIves/github-pages-deploy-action@v4
       with:
+        token: ${{ inputs.gh_token }}
         folder: deploy_root
         clean: true  # Clean enabled for non-root folders
         target-folder: ${{ steps.calc.outputs.target_folder }}
@@ -86,6 +91,7 @@ runs:
       if: ${{ steps.calc.outputs.target_folder == '/' }}
       uses: JamesIves/github-pages-deploy-action@v4
       with:
+        token: ${{ inputs.gh_token }}
         folder: deploy_root
         clean: false  # Clean disabled for root folder
         target-folder: /
@@ -93,6 +99,7 @@ runs:
     - name: Deploy  version🚀
       uses: JamesIves/github-pages-deploy-action@v4
       with:
+        token: ${{ inputs.gh_token }}
         folder: version_root
         clean: false       
 

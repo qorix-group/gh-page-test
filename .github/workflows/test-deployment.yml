@@ -24,3 +24,5 @@ jobs:
           source_folder: "docs/build"  # Change to an actual test folder
           versions_file: "versions"
           create_comment: "true"
+          gh_token: ${{ secrets.GH_PAGES_DEPLOY_TOKEN }} 
+
