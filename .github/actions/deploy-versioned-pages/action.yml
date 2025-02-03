@@ -79,7 +79,7 @@ runs:
       if: ${{ steps.calc.outputs.target_folder != '/' }}
       uses: JamesIves/github-pages-deploy-action@v4
       with:
-        token: ${{ inputs.gh_token }}
+        token: ${{ secrets.GITHUB_TOKEN }}
         folder: deploy_root
         clean: true  # Clean enabled for non-root folders
         target-folder: ${{ steps.calc.outputs.target_folder }}
@@ -91,7 +91,7 @@ runs:
       if: ${{ steps.calc.outputs.target_folder == '/' }}
       uses: JamesIves/github-pages-deploy-action@v4
       with:
-        token: ${{ inputs.gh_token }}
+        token: ${{ secrets.GITHUB_TOKEN }}
         folder: deploy_root
         clean: false  # Clean disabled for root folder
         target-folder: /
@@ -99,7 +99,7 @@ runs:
     - name: Deploy  version🚀
       uses: JamesIves/github-pages-deploy-action@v4
       with:
-        token: ${{ inputs.gh_token }}
+        token: ${{ secrets.GITHUB_TOKEN }}
         folder: version_root
         clean: false       
 
