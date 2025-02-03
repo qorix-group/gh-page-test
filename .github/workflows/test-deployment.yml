@@ -33,11 +33,19 @@ jobs:
             echo "✅ vars.DEPLOY_PRIVATE_KEY is available."
           fi        
 
+      - name: Start SSH Agent and Add Key
+        env:
+            SSH_PRIVATE_KEY: ${{ vars.DEPLOY_PRIVATE_KEY }}
+        run: |
+            eval "$(ssh-agent -s)"
+            echo "$SSH_PRIVATE_KEY" | ssh-add -
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+
       - name: Run Custom Deploy Action 🚀
         uses: ./.github/actions/deploy-versioned-pages
         with:
           source_folder: "docs/build"  # Change to an actual test folder
           versions_file: "versions"
           create_comment: "true"
-          gh_token: ${{ vars.DEPLOY_PRIVATE_KEY }}
+          gh_token: $SSH_AUTH_SOCK 
 
