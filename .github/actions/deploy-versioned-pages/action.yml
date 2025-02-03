@@ -19,6 +19,15 @@ description: Will push the documentation to the gh-pages branch, possibly with a
 # But for now, let's get it working!
 
 inputs:
+  event_name:
+    description: "The name of the GitHub event that triggered the workflow"
+    required: true
+  ref_name:
+    description: "The branch or tag ref that triggered the workflow"
+    required: false
+  pr_number:
+    description: "Pull request number (only for pull_request events)"
+    required: false
   source_folder:
     description: "Path to the html files to deploy in current working directory"
     required: true
@@ -28,9 +37,7 @@ inputs:
   create_comment:
     description: "Create a comment on the PR with the URL to the documentation" # in case of PR
     default: "true"
-  gh_token:
-    description: "GitHub token for authentication"
-    required: true  # ✅ Required input
+
 
 
 outputs:
@@ -45,10 +52,10 @@ runs:
       id: calc
       shell: bash
       run: |
-        if [[ ${{github.event_name}} == 'pull_request' ]]; then
-          echo "target_folder=pr-${{github.event.pull_request.number}}" >> $GITHUB_OUTPUT
-        elif [[ ${{github.ref_name}} != 'main' ]]; then
-          echo "target_folder=${{github.ref_name}}" >> $GITHUB_OUTPUT
+        if [[ "${{ inputs.event_name }}" == 'pull_request' ]]; then
+          echo "target_folder=pr-${{ inputs.pr_number }}" >> $GITHUB_OUTPUT
+        elif [[ "${{ inputs.ref_name }}" != 'main' ]]; then
+          echo "target_folder=${{ inputs.ref_name }}" >> $GITHUB_OUTPUT
         else
           echo "target_folder=/" >> $GITHUB_OUTPUT
         fi
@@ -79,8 +86,8 @@ runs:
       if: ${{ steps.calc.outputs.target_folder != '/' }}
       uses: JamesIves/github-pages-deploy-action@v4
       with:
-        repository-name: dcalavrezo-qorix/docs-preview 
-        ssh-key: ${{ inputs.gh_token }}
+ #       repository-name: dcalavrezo-qorix/docs-preview 
+ #       ssh-key: ${{ inputs.gh_token }}
         folder: deploy_root
         clean: true  # Clean enabled for non-root folders
         target-folder: ${{ steps.calc.outputs.target_folder }}
@@ -92,8 +99,8 @@ runs:
       if: ${{ steps.calc.outputs.target_folder == '/' }}
       uses: JamesIves/github-pages-deploy-action@v4
       with:
-        repository-name: dcalavrezo-qorix/docs-preview 
-        ssh-key: ${{ inputs.gh_token }}
+#        repository-name: dcalavrezo-qorix/docs-preview 
+#        ssh-key: ${{ inputs.gh_token }}
         folder: deploy_root
         clean: false  # Clean disabled for root folder
         target-folder: /
@@ -101,16 +108,16 @@ runs:
     - name: Deploy  version🚀
       uses: JamesIves/github-pages-deploy-action@v4
       with:
-        repository-name: dcalavrezo-qorix/docs-preview 
-        ssh-key: ${{ inputs.gh_token }}
+#        repository-name: dcalavrezo-qorix/docs-preview 
+#        ssh-key: ${{ inputs.gh_token }}
         folder: version_root
         clean: false       
 
     - name: Comment on PR with docs URL
-      if: ${{ github.event_name == 'pull_request' && inputs.create_comment == 'true' }}
+      if: ${{ inputs.event_name == 'pull_request' && inputs.create_comment == 'true' }}
       uses: peter-evans/create-or-update-comment@v4
       with:
-        issue-number: ${{github.event.pull_request.number}}
+        issue-number: ${{ inputs.pr_number }}
         body: |
           The created documentation from the pull request is available at: [docu-html](https://eclipse-score.github.io/score/${{steps.calc.outputs.target_folder}})
         reactions: rocket
