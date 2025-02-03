@@ -1,7 +1,7 @@
 name: Test Deploy Versioned Pages
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, closed]
   push:
     branches:
@@ -10,31 +10,17 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  pages: write
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-        contents: write  # ✅ Required for pushing to gh-pages
-        pages: write
-        id-token: write    
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Verify docs/build Folder
-        run: |
-          if [ ! -d "docs/build" ]; then
-            echo "❌ The folder docs/build does not exist!"
-            exit 1
-          fi
- 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Run Custom Deploy Action 🚀
+        uses: ./.github/actions/deploy-versioned-pages
         with:
-          name: docs-build
-          path: docs/build/
-          retention-days: 1  
-
-
+          source_folder: "docs/build"  # Change to an actual test folder
+          versions_file: "versions"
+          create_comment: "true"
