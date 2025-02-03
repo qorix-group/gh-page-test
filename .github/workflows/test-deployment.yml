@@ -15,9 +15,27 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      # Step 1: Check out the base branch (default behavior of pull_request_target)
+      - name: Checkout Base Branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
 
+      # Step 2: Checkout the PR head branch explicitly (this fetches the code from the fork)
+      - name: Checkout PR Head Branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+      # Step 3: Run a command to confirm the PR code is checked out
+      - name: Verify PR Code
+        run: |
+          echo "Current branch: $(git rev-parse --abbrev-ref HEAD)"
+          echo "Code fetched from PR: ${{ github.event.pull_request.head.repo.full_name }}"
+          ls -al
+
+          
       - name: Run Custom Deploy Action 🚀
         uses: ./.github/actions/deploy-versioned-pages
         with:
