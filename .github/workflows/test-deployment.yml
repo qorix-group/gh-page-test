@@ -23,34 +23,18 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name:  Check If Token is Passed
-
+      - name: Verify docs/build Folder
         run: |
-          if [ -z "${{ vars.DEPLOY_PRIVATE_KEY }}" ]; then
-            echo "❌ ERROR: vars.DEPLOY_PRIVATE_KEY is empty!"
+          if [ ! -d "docs/build" ]; then
+            echo "❌ The folder docs/build does not exist!"
             exit 1
-          else
-            echo "✅ vars.DEPLOY_PRIVATE_KEY is available."
-          fi        
-
-      - name: Start SSH Agent and Add Key
-        env:
-            SSH_PRIVATE_KEY: ${{ vars.DEPLOY_PRIVATE_KEY }}
-        run: |
-            # Remove carriage returns from the private key
-            MODIFIED_SSH_KEY=$(echo "$SSH_PRIVATE_KEY" | tr -d '\r')
-
-            # Write the processed key to $GITHUB_ENV safely
-            echo "MODIFIED_SSH_KEY<<EOF" >> $GITHUB_ENV
-            echo "$MODIFIED_SSH_KEY" >> $GITHUB_ENV
-            echo "EOF" >> $GITHUB_ENV
-
-
-      - name: Run Custom Deploy Action 🚀
-        uses: ./.github/actions/deploy-versioned-pages
+          fi
+ 
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
         with:
-          source_folder: "docs/build"  # Change to an actual test folder
-          versions_file: "versions"
-          create_comment: "true"
-          gh_token: ${{ env.MODIFIED_SSH_KEY }}
+          name: docs-build
+          path: docs/build/
+          retention-days: 1  
+
 

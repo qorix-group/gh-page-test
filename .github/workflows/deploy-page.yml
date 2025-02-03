@@ -28,6 +28,9 @@ jobs:
       - name: Run Custom Deploy Action 🚀
         uses: ./.github/actions/deploy-versioned-pages
         with:
+          event_name: ${{ github.event_name }}
+          ref_name: ${{ github.ref_name }}
+          pr_number: ${{ github.event.pull_request.number || '' }}
           source_folder: "docs-build"  
           versions_file: "versions"
           create_comment: "true"
