@@ -37,8 +37,13 @@ jobs:
         env:
             SSH_PRIVATE_KEY: ${{ vars.DEPLOY_PRIVATE_KEY }}
         run: |
+            # Remove carriage returns from the private key
             MODIFIED_SSH_KEY=$(echo "$SSH_PRIVATE_KEY" | tr -d '\r')
-            echo "MODIFIED_SSH_KEY=$MODIFIED_SSH_KEY" >> $GITHUB_ENV
+
+            # Write the processed key to $GITHUB_ENV safely
+            echo "MODIFIED_SSH_KEY<<EOF" >> $GITHUB_ENV
+            echo "$MODIFIED_SSH_KEY" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
 
 
       - name: Run Custom Deploy Action 🚀
