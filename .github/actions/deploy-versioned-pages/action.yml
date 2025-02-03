@@ -28,9 +28,9 @@ inputs:
   create_comment:
     description: "Create a comment on the PR with the URL to the documentation" # in case of PR
     default: "true"
-  gh_token:
-    description: "GitHub token for authentication"
-    required: true  # ✅ Required input
+#  gh_token:
+#    description: "GitHub token for authentication"
+#    required: true  # ✅ Required input
 
 
 outputs:
@@ -80,7 +80,7 @@ runs:
       uses: JamesIves/github-pages-deploy-action@v4
       with:
         repository-name: dcalavrezo-qorix/docs-preview 
-        ssh-key: ${{ inputs.gh_token }}
+#        ssh-key: ${{ inputs.gh_token }}
         folder: deploy_root
         clean: true  # Clean enabled for non-root folders
         target-folder: ${{ steps.calc.outputs.target_folder }}
@@ -93,7 +93,7 @@ runs:
       uses: JamesIves/github-pages-deploy-action@v4
       with:
         repository-name: dcalavrezo-qorix/docs-preview 
-        ssh-key: ${{ inputs.gh_token }}
+#        ssh-key: ${{ inputs.gh_token }}
         folder: deploy_root
         clean: false  # Clean disabled for root folder
         target-folder: /
@@ -102,7 +102,7 @@ runs:
       uses: JamesIves/github-pages-deploy-action@v4
       with:
         repository-name: dcalavrezo-qorix/docs-preview 
-        ssh-key: ${{ inputs.gh_token }}
+#        ssh-key: ${{ inputs.gh_token }}
         folder: version_root
         clean: false       
 
