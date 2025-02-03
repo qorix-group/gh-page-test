@@ -10,11 +10,11 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  pages: write
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: gh-pages-deploy
     permissions:
         contents: write  # ✅ Required for pushing to gh-pages
         pages: write
@@ -38,5 +38,5 @@ jobs:
           source_folder: "docs/build"  # Change to an actual test folder
           versions_file: "versions"
           create_comment: "true"
-          gh_token: ${{ secrets.GH_PAGES_DEPLOY_TOKEN }}
+          gh_token: ${{ secrets.GH_DOCS_PREVIEW_KEY }}
 
