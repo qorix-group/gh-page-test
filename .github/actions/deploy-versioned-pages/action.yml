@@ -64,14 +64,34 @@ runs:
       id: versions
       shell: bash
       run: |
+        echo "🔹 Checking versions file: ${{ inputs.versions_file }}"
+        
+        # Display contents of versions file
+        if [ -f "${{ inputs.versions_file }}" ]; then
+          echo "🔹 Contents of versions file:"
+          cat "${{ inputs.versions_file }}"
+        else
+          echo "⚠️ Versions file does not exist."
+        fi
+
+        # Initialize clean_exclude with .nojekyll
         CLEAN_EXCLUDE=".nojekyll"
+
+        # Compute clean-exclude only if target_folder is NOT root ("/")
         if [[ "${{ env.target_folder }}" != "/" ]]; then
           if [ -f "${{ inputs.versions_file }}" ]; then
             VERSIONS=$(grep -v '^/$' "${{ inputs.versions_file }}" | tr '\n' ' ')
             CLEAN_EXCLUDE="$CLEAN_EXCLUDE $VERSIONS"
           fi
         fi
+
+        # Export clean_exclude to GITHUB_ENV
         echo "clean_exclude=$CLEAN_EXCLUDE" >> $GITHUB_ENV
+
+        # Debugging output
+        echo "🔹 Clean-exclude list:"
+        echo "$CLEAN_EXCLUDE"
+
 
     - name: Deploy Documentation
       uses: JamesIves/github-pages-deploy-action@v4
