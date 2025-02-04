@@ -48,7 +48,6 @@ runs:
         else
           echo "target_folder=/" >> $GITHUB_OUTPUT
         fi
-      run: |
         # Prepare the deploy folder
         mkdir -p deploy_root
         mkdir -p version_root
