@@ -69,7 +69,7 @@ runs:
 
         # Checkout only the versions file from gh-pages branch of the base repo
         git checkout base/gh-pages -- "${{ inputs.versions_file }}"
-        
+
         if ! grep -qx "$target_folder" "${{ inputs.versions_file }}"; then
           echo "$target_folder" >> "${{ inputs.versions_file }}"
         fi
@@ -107,14 +107,25 @@ runs:
         } >> "$GITHUB_ENV"
 
 
-    # Deploy documentation when target-folder is NOT root
-    - name: Deploy Documentation
+    # Deploy when target-folder is NOT "/"
+    - name: Deploy Documentation (Non-Root)
+      if: steps.calc.outputs.target_folder != '/'
       uses: JamesIves/github-pages-deploy-action@v4
       with:
         folder: deploy_root
-        clean: true # Clean the folder
+        clean: true
         target-folder: ${{ steps.calc.outputs.target_folder }}
         clean-exclude: ${{ env.clean_exclude }}
+
+    # Deploy when target-folder IS "/"
+    - name: Deploy Documentation (Root)
+      if: steps.calc.outputs.target_folder == '/'
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        folder: deploy_root
+        clean: true
+        clean-exclude: ${{ env.clean_exclude }}
+
 
 
     - name: Deploy  version file 🚀
