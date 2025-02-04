@@ -13,8 +13,6 @@
 
 name: Documentation
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]  # Handles same-repo PRs
   pull_request_target:
     types: [opened, reopened, synchronize]  # Handles forked PRs
   push:

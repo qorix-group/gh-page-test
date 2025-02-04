@@ -1,15 +1,32 @@
+# *******************************************************************************
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+# *******************************************************************************
+
 name: Deploy Versioned Pages
-description: Will push the documentation to the gh-pages branch, possibly with a versioned URL.
+description: Will push the documentation to the gh-pages branch, possibly with a versioned URL. When the PR is closed, the documentation will be deleted.
+# Note: this has some shortcomings, like race conditions when multiple PRs are opened at the same time,
+# problems with overwriting existing files, not deleting deleted files, etc.
+# We'll address these when we transform this action into a truly reusable independent action.
+# But for now, let's get it working!
 
 inputs:
   source_folder:
-    description: "Path to the HTML files to deploy in current working directory"
+    description: "Path to the html files to deploy in current working directory"
     required: true
   versions_file:
     description: "Path to the versions file on gh-pages branch"
     default: "versions"
   create_comment:
-    description: "Create a comment on the PR with the URL to the documentation"
+    description: "Create a comment on the PR with the URL to the documentation" # in case of PR
     default: "true"
 
 outputs:
@@ -25,108 +42,72 @@ runs:
       shell: bash
       run: |
         if [[ "${{ github.event_name }}" == 'pull_request_target' || "${{ github.event_name }}" == 'pull_request' ]]; then
-          echo "target_folder=pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV
-        elif [[ "${{ github.ref_name }}" != "main" ]]; then
-          echo "target_folder=${{ github.ref_name }}" >> $GITHUB_ENV
+          echo "target_folder=pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+        elif [[ ${{github.ref_name}} != 'main' ]]; then
+          echo "target_folder=${{github.ref_name}}" >> $GITHUB_OUTPUT
         else
-          echo "target_folder=/" >> $GITHUB_ENV
+          echo "target_folder=/" >> $GITHUB_OUTPUT
         fi
 
-    - name: Prepare the deploy folder
-      shell: bash
-      run: |
+        # Prepare the deploy folder
         mkdir -p deploy_root
         mkdir -p version_root
+        # Move the files to the deploy folder
         mv ${{ inputs.source_folder }}/* deploy_root/
+        # Ensure that the folder is not treated as a Jekyll site
         touch deploy_root/.nojekyll
 
-    - name: Checkout `gh-pages` from Base Repo
-      uses: actions/checkout@v4
-      with:
-        repository: ${{ github.repository }}  # Base repository (not the fork)
-        ref: gh-pages  # Checkout the `gh-pages` branch
-        path: gh-pages  # Store it in a separate folder
-        fetch-depth: 1  # Fetch only the latest commit (faster)
-
-
-    - name: Add target folder to versions file
-      shell: bash
-      run: |
-        VERSIONS_FILE="gh-pages/${{ inputs.versions_file }}"  # Adjusted path
-
-        # Ensure the versions file exists
-        if [ ! -f "$VERSIONS_FILE" ]; then
-          echo "⚠️ Versions file does not exist. Creating it."
-          touch "$VERSIONS_FILE"
+        # Add the target folder to the versions file
+        git fetch origin gh-pages --depth 1
+        git checkout origin/gh-pages -- "${{ inputs.versions_file }}"
+        if ! grep -qx "${{ steps.calc.outputs.target_folder }}" "${{ inputs.versions_file }}"; then
+          echo "${{ steps.calc.outputs.target_folder }}" >> "${{ inputs.versions_file }}"
         fi
-
-        # Add the target folder only if it's not already in the file
-        if ! grep -qx "${{ env.target_folder }}" "$VERSIONS_FILE"; then
-          echo "${{ env.target_folder }}" >> "$VERSIONS_FILE"
-        fi
-
-        # Move the updated versions file to version_root
-        mkdir -p version_root
-        mv "$VERSIONS_FILE" version_root/
-
+        mv "${{ inputs.versions_file }}" version_root/
+        ls -al .
+        ls -al deploy_root
+        ls -al version_root
 
     - name: Read versions file and format clean-exclude
       id: versions
       shell: bash
       run: |
-        VERSIONS_FILE="gh-pages/${{ inputs.versions_file }}"  # Adjusted path
-
-        echo "🔹 Checking versions file at: $VERSIONS_FILE"
-        
-        # Ensure the versions file exists
-        if [ ! -f "$VERSIONS_FILE" ]; then
-          echo "⚠️ Versions file does not exist. Creating an empty one."
-          touch "$VERSIONS_FILE"
-        fi
-
-        # Display contents of versions file
-        echo "🔹 Contents of versions file:"
-        cat "$VERSIONS_FILE" || echo "⚠️ File is empty"
-
-        # Initialize clean_exclude with .nojekyll
+        # Start with .nojekyll as an always-excluded file
         CLEAN_EXCLUDE=".nojekyll"
 
         # Compute clean-exclude only if target_folder is NOT root ("/")
-        if [[ "${{ env.target_folder }}" != "/" ]]; then
-          if [ -s "$VERSIONS_FILE" ]; then
-            VERSIONS=$(grep -v '^/$' "$VERSIONS_FILE" | tr '\n' ' ')
+        if [[ "${{ steps.calc.outputs.target_folder }}" != "/" ]]; then
+          if [ -f "${{ inputs.versions_file }}" ]; then
+            VERSIONS=$(grep -v '^/$' "${{ inputs.versions_file }}" | tr '\n' ' ')
             CLEAN_EXCLUDE="$CLEAN_EXCLUDE $VERSIONS"
           fi
         fi
 
-        # Export clean_exclude to GITHUB_ENV
+        # Export the final clean-exclude list
         echo "clean_exclude=$CLEAN_EXCLUDE" >> $GITHUB_ENV
 
-        # Debugging output
-        echo "🔹 Clean-exclude list:"
-        echo "$CLEAN_EXCLUDE"
-
-
-
+    # Deploy documentation when target-folder is NOT root
     - name: Deploy Documentation
       uses: JamesIves/github-pages-deploy-action@v4
       with:
         folder: deploy_root
-        clean: true
-        target-folder: ${{ env.target_folder }}
+        clean: true # Clean the folder
+        target-folder: ${{ steps.calc.outputs.target_folder }}
         clean-exclude: ${{ env.clean_exclude }}
 
-    - name: Deploy version file 🚀
+
+    - name: Deploy  version file 🚀
       uses: JamesIves/github-pages-deploy-action@v4
       with:
         folder: version_root
         clean: false
 
+
     - name: Comment on PR with docs URL
       if: ${{ (github.event_name == 'pull_request_target' || github.event_name == 'pull_request') && inputs.create_comment == 'true' }}
       uses: peter-evans/create-or-update-comment@v4
       with:
-        issue-number: ${{ github.event.pull_request.number }}
+        issue-number: ${{github.event.pull_request.number}}
         body: |
-          The created documentation from the pull request is available at: [docu-html](https://eclipse-score.github.io/score/${{ env.target_folder }})
+          The created documentation from the pull request is available at: [docu-html](https://eclipse-score.github.io/score/${{steps.calc.outputs.target_folder}})
         reactions: rocket
