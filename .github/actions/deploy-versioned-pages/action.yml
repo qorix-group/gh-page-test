@@ -40,47 +40,61 @@ runs:
         mv ${{ inputs.source_folder }}/* deploy_root/
         touch deploy_root/.nojekyll
 
-    - name: Fetch gh-pages (only if it exists)
-      shell: bash
-      run: |
-        git remote add upstream https://github.com/${{ github.repository }}.git
-        if git ls-remote --exit-code upstream gh-pages; then
-          git fetch upstream gh-pages --depth 1
-          git checkout upstream/gh-pages -- "${{ inputs.versions_file }}"
-        else
-          echo "gh-pages branch does not exist in upstream. Skipping fetch."
-          touch "${{ inputs.versions_file }}"
-        fi
+    - name: Checkout `gh-pages` from Base Repo
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ github.repository }}  # Base repository (not the fork)
+        ref: gh-pages  # Checkout the `gh-pages` branch
+        path: gh-pages  # Store it in a separate folder
+        fetch-depth: 1  # Fetch only the latest commit (faster)
+
 
     - name: Add target folder to versions file
       shell: bash
       run: |
-        if ! grep -qx "${{ env.target_folder }}" "${{ inputs.versions_file }}"; then
-          echo "${{ env.target_folder }}" >> "${{ inputs.versions_file }}"
+        VERSIONS_FILE="gh-pages/${{ inputs.versions_file }}"  # Adjusted path
+
+        # Ensure the versions file exists
+        if [ ! -f "$VERSIONS_FILE" ]; then
+          echo "⚠️ Versions file does not exist. Creating it."
+          touch "$VERSIONS_FILE"
         fi
-        mv "${{ inputs.versions_file }}" version_root/
+
+        # Add the target folder only if it's not already in the file
+        if ! grep -qx "${{ env.target_folder }}" "$VERSIONS_FILE"; then
+          echo "${{ env.target_folder }}" >> "$VERSIONS_FILE"
+        fi
+
+        # Move the updated versions file to version_root
+        mkdir -p version_root
+        mv "$VERSIONS_FILE" version_root/
+
 
     - name: Read versions file and format clean-exclude
       id: versions
       shell: bash
       run: |
-        echo "🔹 Checking versions file: ${{ inputs.versions_file }}"
+        VERSIONS_FILE="gh-pages/${{ inputs.versions_file }}"  # Adjusted path
+
+        echo "🔹 Checking versions file at: $VERSIONS_FILE"
         
-        # Display contents of versions file
-        if [ -f "${{ inputs.versions_file }}" ]; then
-          echo "🔹 Contents of versions file:"
-          cat "${{ inputs.versions_file }}"
-        else
-          echo "⚠️ Versions file does not exist."
+        # Ensure the versions file exists
+        if [ ! -f "$VERSIONS_FILE" ]; then
+          echo "⚠️ Versions file does not exist. Creating an empty one."
+          touch "$VERSIONS_FILE"
         fi
+
+        # Display contents of versions file
+        echo "🔹 Contents of versions file:"
+        cat "$VERSIONS_FILE" || echo "⚠️ File is empty"
 
         # Initialize clean_exclude with .nojekyll
         CLEAN_EXCLUDE=".nojekyll"
 
         # Compute clean-exclude only if target_folder is NOT root ("/")
         if [[ "${{ env.target_folder }}" != "/" ]]; then
-          if [ -f "${{ inputs.versions_file }}" ]; then
-            VERSIONS=$(grep -v '^/$' "${{ inputs.versions_file }}" | tr '\n' ' ')
+          if [ -s "$VERSIONS_FILE" ]; then
+            VERSIONS=$(grep -v '^/$' "$VERSIONS_FILE" | tr '\n' ' ')
             CLEAN_EXCLUDE="$CLEAN_EXCLUDE $VERSIONS"
           fi
         fi
@@ -91,6 +105,7 @@ runs:
         # Debugging output
         echo "🔹 Clean-exclude list:"
         echo "$CLEAN_EXCLUDE"
+
 
 
     - name: Deploy Documentation
