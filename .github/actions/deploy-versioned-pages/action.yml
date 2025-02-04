@@ -78,12 +78,14 @@ runs:
         # Compute clean-exclude only if target_folder is root ("/")
         if [[ "${{ steps.calc.outputs.target_folder }}" == "/" ]]; then
           if [ -f "${{ inputs.versions_file }}" ]; then
+            echo "CACA"
             VERSIONS=$(grep -v '^/$' "${{ inputs.versions_file }}" | tr '\n' ' ')
             CLEAN_EXCLUDE="$CLEAN_EXCLUDE $VERSIONS"
           fi
         fi
 
         # Export the final clean-exclude list
+        echo "DAAAAAAAAAAAAN : $CLEAN_EXCLUDE"
         echo "clean_exclude=$CLEAN_EXCLUDE" >> $GITHUB_ENV
 
     # Deploy documentation when target-folder is NOT root
