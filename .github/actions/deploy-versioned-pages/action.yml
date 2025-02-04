@@ -75,8 +75,8 @@ runs:
         # Start with .nojekyll as an always-excluded file
         CLEAN_EXCLUDE=".nojekyll"
 
-        # Compute clean-exclude only if target_folder is NOT root ("/")
-        if [[ "${{ steps.calc.outputs.target_folder }}" != "/" ]]; then
+        # Compute clean-exclude only if target_folder is root ("/")
+        if [[ "${{ steps.calc.outputs.target_folder }}" == "/" ]]; then
           if [ -f "${{ inputs.versions_file }}" ]; then
             VERSIONS=$(grep -v '^/$' "${{ inputs.versions_file }}" | tr '\n' ' ')
             CLEAN_EXCLUDE="$CLEAN_EXCLUDE $VERSIONS"
