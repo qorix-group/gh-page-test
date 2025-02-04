@@ -78,26 +78,27 @@ runs:
       shell: bash
       run: |
         CLEAN_EXCLUDE=".nojekyll"
-
-        # Check if file exists in the new location
         NEW_VERSIONS_FILE="version_root/$(basename "${{ inputs.versions_file }}")"
-        echo "Looking for versions file at: $NEW_VERSIONS_FILE"
+
+        echo "Checking versions file: $NEW_VERSIONS_FILE"
 
         if [[ "${{ steps.calc.outputs.target_folder }}" == "/" ]]; then
-          if [ -f "$NEW_VERSIONS_FILE" ]; then
-            echo "✅ File found!"
-            echo "CACA" 
-
-            VERSIONS=$(grep -v '^/$' "$NEW_VERSIONS_FILE" | tr '\n' ' ')
-            CLEAN_EXCLUDE="$CLEAN_EXCLUDE $VERSIONS"
+          if [[ -f "$NEW_VERSIONS_FILE" ]]; then
+            echo "✅ Versions file found!"
+            VERSIONS=$(grep -v '^/$' "$NEW_VERSIONS_FILE")
+            CLEAN_EXCLUDE=".nojekyll"$'\n'"$VERSIONS"
           else
-            echo "❌ ERROR: File '$NEW_VERSIONS_FILE' NOT FOUND!"
-            exit 1  # Stop execution if file is missing
+            echo "❌ ERROR: Versions file not found!"
+            exit 1
           fi
         fi
 
-        echo "DAAAAAN clean_exclude: $CLEAN_EXCLUDE"
-        echo "clean_exclude=$CLEAN_EXCLUDE" >> $GITHUB_ENV
+        echo -e "Final CLEAN_EXCLUDE:\n$CLEAN_EXCLUDE"
+        {
+          echo "clean_exclude<<EOF"
+          echo "$CLEAN_EXCLUDE"
+          echo "EOF"
+        } >> "$GITHUB_ENV"
 
 
     # Deploy documentation when target-folder is NOT root
