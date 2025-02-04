@@ -1,5 +1,5 @@
 # *******************************************************************************
-# Copyright (c) 2024 Contributors to the Eclipse Foundation
+# Copyright (c) 2025 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -37,33 +37,17 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Log GitHub Event Information
-      shell: bash
-      run: |
-        echo "Event Name: ${{ github.event_name }}"
-        echo "Pull Request Number: ${{ github.event.pull_request.number }}"
-        echo "Ref Name: ${{ github.ref_name }}"
-
     - name: Determine target_folder
       id: calc
       shell: bash
       run: |
-        # Safeguard against empty or unset values
-        if [[ "${{ github.event_name }}" == 'pull_request_target' ]]; then
-          # Fetch PR number safely
-          if [[ -n "${{ github.event.pull_request.number }}" ]]; then
-            echo "target_folder=pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
-          else
-            echo "Error: Pull Request number is missing!" >&2
-            exit 1
-          fi
-        elif [[ "${{ github.ref_name }}" != 'main' ]]; then
-          echo "target_folder=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+        if [[ "${{ github.event_name }}" == 'pull_request_target' || "${{ github.event_name }}" == 'pull_request' ]]; then
+          echo "target_folder=pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+        elif [[ ${{github.ref_name}} != 'main' ]]; then
+          echo "target_folder=${{github.ref_name}}" >> $GITHUB_OUTPUT
         else
           echo "target_folder=/" >> $GITHUB_OUTPUT
         fi
-    - name: Prepare
-      shell: bash
       run: |
         # Prepare the deploy folder
         mkdir -p deploy_root
@@ -74,8 +58,15 @@ runs:
         touch deploy_root/.nojekyll
 
         # Add the target folder to the versions file
-        git fetch origin gh-pages --depth 1
-        git checkout origin/gh-pages -- "${{ inputs.versions_file }}"
+        # Add the base repository as "upstream" for forked PRs
+        git remote add upstream https://github.com/${{ github.repository }}.git
+        # Check if gh-pages exists in the base repository (not the fork)
+        if git ls-remote --exit-code upstream gh-pages; then
+          git fetch upstream gh-pages --depth 1
+          git checkout upstream/gh-pages -- "${{ inputs.versions_file }}"
+        else
+          echo "gh-pages branch does not exist in upstream. Skipping fetch."
+        fi
         if ! grep -qx "${{ steps.calc.outputs.target_folder }}" "${{ inputs.versions_file }}"; then
           echo "${{ steps.calc.outputs.target_folder }}" >> "${{ inputs.versions_file }}"
         fi
@@ -83,35 +74,43 @@ runs:
         ls -al .
         ls -al deploy_root
         ls -al version_root
-        
+
+    - name: Read versions file and format clean-exclude
+      id: versions
+      run: |
+        # Start with .nojekyll as an always-excluded file
+        CLEAN_EXCLUDE=".nojekyll"
+
+        # Compute clean-exclude only if target_folder is NOT root ("/")
+        if [[ "${{ steps.calc.outputs.target_folder }}" != "/" ]]; then
+          if [ -f "${{ inputs.versions_file }}" ]; then
+            VERSIONS=$(grep -v '^/$' "${{ inputs.versions_file }}" | tr '\n' ' ')
+            CLEAN_EXCLUDE="$CLEAN_EXCLUDE $VERSIONS"
+          fi
+        fi
+
+        # Export the final clean-exclude list
+        echo "clean_exclude=$CLEAN_EXCLUDE" >> $GITHUB_ENV
+
     # Deploy documentation when target-folder is NOT root
-    - name: Deploy Documentation (Non-Root) 🚀
-      if: ${{ steps.calc.outputs.target_folder != '/' }}
+    - name: Deploy Documentation
       uses: JamesIves/github-pages-deploy-action@v4
       with:
         folder: deploy_root
-        clean: true  # Clean enabled for non-root folders
+        clean: true # Clean the folder
         target-folder: ${{ steps.calc.outputs.target_folder }}
-        clean-exclude: |
-          .nojekyll
+        clean-exclude: ${{ env.clean_exclude }}
 
-    # Deploy documentation when target-folder IS root
-    - name: Deploy Documentation (Root) 🚀
-      if: ${{ steps.calc.outputs.target_folder == '/' }}
-      uses: JamesIves/github-pages-deploy-action@v4
-      with:
-        folder: deploy_root
-        clean: false  # Clean disabled for root folder
-        target-folder: /
 
-    - name: Deploy  version🚀
+    - name: Deploy  version file 🚀
       uses: JamesIves/github-pages-deploy-action@v4
       with:
         folder: version_root
-        clean: false       
+        clean: false
+
 
     - name: Comment on PR with docs URL
-      if: ${{ github.event_name == 'pull_request' && inputs.create_comment == 'true' }}
+      if: ${{ (github.event_name == 'pull_request_target' || github.event_name == 'pull_request') && inputs.create_comment == 'true' }}
       uses: peter-evans/create-or-update-comment@v4
       with:
         issue-number: ${{github.event.pull_request.number}}
