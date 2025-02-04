@@ -42,11 +42,11 @@ runs:
       shell: bash
       run: |
         if [[ "${{ github.event_name }}" == 'pull_request_target' || "${{ github.event_name }}" == 'pull_request' ]]; then
-          echo "target_folder=pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          target_folder="pr-${{ github.event.pull_request.number }}"
         elif [[ ${{github.ref_name}} != 'main' ]]; then
-          echo "target_folder=${{github.ref_name}}" >> $GITHUB_OUTPUT
+          target_folder="${{github.ref_name}}"
         else
-          echo "target_folder=/" >> $GITHUB_OUTPUT
+          target_folder="/"
         fi
 
         echo "target_folder=$target_folder" >> $GITHUB_OUTPUT
