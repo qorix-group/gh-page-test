@@ -67,6 +67,7 @@ runs:
         ls -al .
         ls -al deploy_root
         ls -al version_root
+        cat  version_root/"${{ inputs.versions_file }}"
 
     - name: Read versions file and format clean-exclude
       id: versions
