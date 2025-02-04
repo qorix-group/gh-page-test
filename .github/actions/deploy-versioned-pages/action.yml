@@ -42,12 +42,16 @@ runs:
       shell: bash
       run: |
         if [[ "${{ github.event_name }}" == 'pull_request_target' || "${{ github.event_name }}" == 'pull_request' ]]; then
-          echo "target_folder=pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          target_folder="pr-${{ github.event.pull_request.number }}"
         elif [[ ${{github.ref_name}} != 'main' ]]; then
-          echo "target_folder=${{github.ref_name}}" >> $GITHUB_OUTPUT
+          target_folder="${{github.ref_name}}"
         else
-          echo "target_folder=/" >> $GITHUB_OUTPUT
+          target_folder="/"
         fi
+
+        echo "target_folder=$target_folder" >> $GITHUB_OUTPUT
+
+        echo "DAAAAN $target_folder"
 
         # Prepare the deploy folder
         mkdir -p deploy_root
@@ -60,13 +64,14 @@ runs:
         # Add the target folder to the versions file
         git fetch origin gh-pages --depth 1
         git checkout origin/gh-pages -- "${{ inputs.versions_file }}"
-        if ! grep -qx "${{ steps.calc.outputs.target_folder }}" "${{ inputs.versions_file }}"; then
-          echo "${{ steps.calc.outputs.target_folder }}" >> "${{ inputs.versions_file }}"
+        if ! grep -qx "$target_folder" "${{ inputs.versions_file }}"; then
+          echo "$target_folder" >> "${{ inputs.versions_file }}"
         fi
         mv "${{ inputs.versions_file }}" version_root/
         ls -al .
         ls -al deploy_root
         ls -al version_root
+        cat  version_root/"${{ inputs.versions_file }}"
 
     - name: Read versions file and format clean-exclude
       id: versions
