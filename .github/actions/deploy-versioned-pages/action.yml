@@ -72,21 +72,28 @@ runs:
       id: versions
       shell: bash
       run: |
-        # Start with .nojekyll as an always-excluded file
         CLEAN_EXCLUDE=".nojekyll"
 
-        # Compute clean-exclude only if target_folder is root ("/")
+        # Check if file exists in the new location
+        NEW_VERSIONS_FILE="version_root/$(basename "${{ inputs.versions_file }}")"
+        echo "Looking for versions file at: $NEW_VERSIONS_FILE"
+
         if [[ "${{ steps.calc.outputs.target_folder }}" == "/" ]]; then
-          if [ -f "${{ inputs.versions_file }}" ]; then
-            echo "CACA"
-            VERSIONS=$(grep -v '^/$' "${{ inputs.versions_file }}" | tr '\n' ' ')
+          if [ -f "$NEW_VERSIONS_FILE" ]; then
+            echo "✅ File found!"
+            echo "CACA" 
+
+            VERSIONS=$(grep -v '^/$' "$NEW_VERSIONS_FILE" | tr '\n' ' ')
             CLEAN_EXCLUDE="$CLEAN_EXCLUDE $VERSIONS"
+          else
+            echo "❌ ERROR: File '$NEW_VERSIONS_FILE' NOT FOUND!"
+            exit 1  # Stop execution if file is missing
           fi
         fi
 
-        # Export the final clean-exclude list
-        echo "DAAAAAAAAAAAAN : $CLEAN_EXCLUDE"
+        echo "DAAAAAN clean_exclude: $CLEAN_EXCLUDE"
         echo "clean_exclude=$CLEAN_EXCLUDE" >> $GITHUB_ENV
+
 
     # Deploy documentation when target-folder is NOT root
     - name: Deploy Documentation
