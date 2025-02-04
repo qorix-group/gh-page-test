@@ -49,6 +49,9 @@ runs:
           echo "target_folder=/" >> $GITHUB_OUTPUT
         fi
 
+        echo "DAAAAN target_folder"
+        echo "DAAAN ${{ steps.calc.outputs.target_folder }}
+
         # Prepare the deploy folder
         mkdir -p deploy_root
         mkdir -p version_root
