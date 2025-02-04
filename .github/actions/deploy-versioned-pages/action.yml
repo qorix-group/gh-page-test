@@ -49,8 +49,9 @@ runs:
           echo "target_folder=/" >> $GITHUB_OUTPUT
         fi
 
+        echo "target_folder=$target_folder" >> $GITHUB_OUTPUT
+
         echo "DAAAAN $target_folder"
-        echo "DAAAN ${{ steps.calc.outputs.target_folder }}
 
         # Prepare the deploy folder
         mkdir -p deploy_root
@@ -63,8 +64,8 @@ runs:
         # Add the target folder to the versions file
         git fetch origin gh-pages --depth 1
         git checkout origin/gh-pages -- "${{ inputs.versions_file }}"
-        if ! grep -qx "${{ steps.calc.outputs.target_folder }}" "${{ inputs.versions_file }}"; then
-          echo "${{ steps.calc.outputs.target_folder }}" >> "${{ inputs.versions_file }}"
+        if ! grep -qx "$target_folder" "${{ inputs.versions_file }}"; then
+          echo "$target_folder" >> "${{ inputs.versions_file }}"
         fi
         mv "${{ inputs.versions_file }}" version_root/
         ls -al .
