@@ -70,6 +70,7 @@ runs:
 
     - name: Read versions file and format clean-exclude
       id: versions
+      shell: bash
       run: |
         # Start with .nojekyll as an always-excluded file
         CLEAN_EXCLUDE=".nojekyll"
