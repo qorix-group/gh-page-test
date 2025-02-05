@@ -13,9 +13,16 @@
 
 name: Cleanup Documentation
 on:
-  pull_request:
+  pull_request_target:
     types: [closed]
   delete:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  pull-requests: write   
+     
 jobs:
   docs-build-cleanup:
     name: Remove build documentation
@@ -26,12 +33,16 @@ jobs:
       group: gh-pages
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout gh-pages from Base Repo
+        uses: actions/checkout@v4
         with:
+          repository: ${{ github.event.pull_request.base.repo.full_name }} # Ensures we checkout the base repo, not the fork
           ref: gh-pages
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Remove version
         run: |
-          if [[ ${{ github.event_name }} == "pull_request" ]]; then
+          if [[ ${{ github.event_name }} == "pull_request_target" ]]; then
             VERSION="pr-${{ github.event.pull_request.number }}"
           else
             VERSION="${{ github.ref_name }}"
