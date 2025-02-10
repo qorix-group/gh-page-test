@@ -93,6 +93,7 @@ runs:
       with:
         folder: deploy_root
         clean: true
+        target-folder: ${{ steps.calc.outputs.target_folder }}
         clean-exclude: .nojekyll
 
     - name: Deploy  version file 🚀
@@ -103,7 +104,7 @@ runs:
 
 
     - name: Comment on PR with docs URL
-      if: ${{ github.event_name == 'pull_request' && inputs.create_comment == 'true' }}
+      if: ${{ github.event_name == 'pull_request_target' && inputs.create_comment == 'true' }}
       uses: peter-evans/create-or-update-comment@v4
       with:
         issue-number: ${{github.event.pull_request.number}}
