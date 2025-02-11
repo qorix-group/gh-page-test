@@ -51,6 +51,8 @@ runs:
     - name: Prepare the deploy folder
       shell: bash
       run: |
+        echo "CACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAT"
+        echo "PISAAAAAAAAAAAAAAAAAAAAAAAAT"
         # Prepare the deploy folder
         mkdir -p deploy_root
         mkdir -p version_root
