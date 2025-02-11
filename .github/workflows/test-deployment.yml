@@ -58,9 +58,6 @@ jobs:
     steps:
       - name: Checkout repository (Handle both PR events)
         uses: actions/checkout@v4.2.2
-        with:
-          ref: ${{ github.head_ref || github.event.pull_request.head.ref || github.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}   
 
       - name: Download documentation artifact
         uses: actions/download-artifact@v4.1.8
